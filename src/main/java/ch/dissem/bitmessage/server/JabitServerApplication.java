@@ -2,7 +2,6 @@ package ch.dissem.bitmessage.server;
 
 import ch.dissem.bitmessage.BitmessageContext;
 import ch.dissem.bitmessage.entity.BitmessageAddress;
-import ch.dissem.bitmessage.entity.Plaintext;
 import ch.dissem.bitmessage.networking.DefaultNetworkHandler;
 import ch.dissem.bitmessage.ports.MemoryNodeRegistry;
 import ch.dissem.bitmessage.repository.JdbcAddressRepository;
@@ -10,13 +9,12 @@ import ch.dissem.bitmessage.repository.JdbcConfig;
 import ch.dissem.bitmessage.repository.JdbcInventory;
 import ch.dissem.bitmessage.repository.JdbcMessageRepository;
 import ch.dissem.bitmessage.security.bc.BouncySecurity;
+import ch.dissem.bitmessage.server.entities.Broadcasts;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @EnableAutoConfiguration
@@ -29,7 +27,7 @@ public class JabitServerApplication {
     }
 
     @RequestMapping("read/{broadcastAddress}")
-    public List<Plaintext> read(@PathVariable String broadcastAddress) {
+    public Broadcasts read(@PathVariable String broadcastAddress) {
         BitmessageAddress broadcaster = ctx.addresses().getAddress(broadcastAddress);
         if (broadcaster == null) {
             broadcaster = new BitmessageAddress(broadcastAddress);
@@ -37,7 +35,7 @@ public class JabitServerApplication {
         if (!broadcaster.isSubscribed()) {
             ctx.addSubscribtion(broadcaster);
         }
-        return ctx.messages().findMessages(broadcaster);
+        return new Broadcasts(broadcaster, ctx.messages().findMessages(broadcaster));
     }
 
     public JabitServerApplication() {
