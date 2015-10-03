@@ -15,6 +15,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   // Learn more about auto-binding templates at http://goo.gl/Dx1u2g
   var app = document.querySelector('#app');
 
+  app.join = function() {
+    var index = 0;
+    var result = '';
+    for (index = 0; index < arguments.length; index++) {
+      result += arguments[index];
+    }
+    return result;
+  };
+
   app.displayInstalledToast = function() {
     // Check to make sure caching is actually enabled—it won't be in the dev environment.
     if (!document.querySelector('platinum-sw-cache').disabled) {
@@ -69,6 +78,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   // Scroll page to top and expand header
   app.scrollPageToTop = function() {
     document.getElementById('mainContainer').scrollTop = 0;
+  };
+
+  app.initializeExamples = function() {
+    this.value = [
+      {
+        alias: 'General',
+        address: 'BM-2cToDNkgW4KN92vuEjgnT1To3WEyt4r3DK'
+      },
+      {
+        alias: 'DevTalk',
+        address: 'BM-2D9QKN4teYRvoq2fyzpiftPh9WP9qggtzh'
+      },
+      {
+        alias: 'Timeservice',
+        address: 'BM-BcbRqcFFSQUUmXFKsPJgVQPSiFA3Xash'
+      },
+      {
+        alias: 'Q\'s Aktivlist',
+        address: 'BM-GtT7NLCCAu3HrT7dNTUTY9iDns92Z2ND'
+      }
+    ];
+    console.log(this.value);
   };
 
 })(document);

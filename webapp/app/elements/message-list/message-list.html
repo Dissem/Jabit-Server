@@ -1,0 +1,78 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="message-list">
+  <template>
+    <link rel="import" href="../../styles/app-theme.html">
+    <style include="shared-styles"></style>
+    <style>
+      .received {
+        float: right;
+        font-size: 60%;
+      }
+      .paper-font-body2 {
+        white-space: pre-wrap;
+      }
+    </style>
+
+    <iron-ajax
+      auto
+      url="{{getUrl(server, address)}}"
+      handle-as="json"
+      last-response="{{broadcasts}}"
+      debounce-duration="300"></iron-ajax>
+    <template is="dom-repeat" items="{{broadcasts.messages}}">
+      <paper-material elevation="1">
+        <h1>{{item.subject}}<span class="received">{{toDate(item.received)}}</span></h1>
+
+        <p class="paper-font-body2">{{item.body}}</p>
+      </paper-material>
+    </template>
+  </template>
+
+  <script>
+    (function() {
+      'use strict';
+
+      Polymer({
+        is: 'message-list',
+
+        properties: {
+          address: {
+            type: String,
+            value: 'BM-2D9QKN4teYRvoq2fyzpiftPh9WP9qggtzh',
+            notify: true
+          },
+          broadcasts: {
+            type: Object,
+            notify: true
+          },
+          server: {
+            type: String,
+            value: 'http://localhost:8080',
+            notify: true
+          }
+        },
+
+        toDate: function(timestamp) {
+          return new Date(timestamp * 1000).toLocaleString();
+        },
+        getUrl: function(server, address) {
+          return server + '/read/' + address;
+        }
+      });
+    })();
+
+  </script>
+
+</dom-module>
