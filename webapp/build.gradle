@@ -9,4 +9,6 @@ gulp_default.dependsOn 'installGulp'
 gulp_default.dependsOn 'npmInstall'
 
 // runs "gulp build" as part of your gradle build
-task (build, dependsOn: gulp_default) {}
+task build {
+  dependsOn gulp_default
+}

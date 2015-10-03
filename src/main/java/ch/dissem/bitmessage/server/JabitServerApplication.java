@@ -28,6 +28,8 @@ import ch.dissem.bitmessage.repository.JdbcMessageRepository;
 import ch.dissem.bitmessage.security.bc.BouncySecurity;
 import ch.dissem.bitmessage.server.entities.Broadcasts;
 import ch.dissem.bitmessage.server.entities.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -35,15 +37,26 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
 public class JabitServerApplication {
+    private static final Logger LOG = LoggerFactory.getLogger(JabitServerApplication.class);
+
+    private static final String CONFIG_FILE = "config.properties";
+    private static final String PROPERTY_PORT = "port";
+
     private static final int SHORTLIST_SIZE = 5;
+
     private final Set<String> whitelist;
     private final Set<String> shortlist;
     private final Set<String> blacklist;
@@ -101,7 +114,28 @@ public class JabitServerApplication {
                 "blacklist.conf",
                 "# Bitmessage addresses in this file are being ignored and their broadcasts won't be returned.\n"
         );
-        
+
+        Properties properties = new Properties();
+        int port = 8444;
+        try {
+            properties.load(new FileInputStream(CONFIG_FILE));
+            String portProperty = properties.getProperty(PROPERTY_PORT);
+            if (portProperty != null) {
+                port = Integer.parseInt(portProperty);
+            }
+        } catch (FileNotFoundException ignore) {
+            try {
+                properties.setProperty(PROPERTY_PORT, String.valueOf(port));
+                properties.store(new FileOutputStream(CONFIG_FILE), null);
+            } catch (IOException e) {
+                LOG.warn("Couldn't save default config file", e);
+            }
+        } catch (IOException e) {
+            LOG.error("Couldn't load config, using defaults", e);
+        } catch (NumberFormatException e) {
+            LOG.error("Couldn't read port property - is it a number?", e);
+        }
+
         JdbcConfig config = new JdbcConfig();
         ctx = new BitmessageContext.Builder()
                 .addressRepo(new JdbcAddressRepository(config))
@@ -110,7 +144,7 @@ public class JabitServerApplication {
                 .nodeRegistry(new MemoryNodeRegistry())
                 .networkHandler(new DefaultNetworkHandler())
                 .security(new BouncySecurity())
-                .port(8445)
+                .port(port)
                 .build();
         ctx.startup(plaintext -> {
         });
