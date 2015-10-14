@@ -41,16 +41,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Timer;
 
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
 public class JabitServerApplication {
     private static final Logger LOG = LoggerFactory.getLogger(JabitServerApplication.class);
+
+    private static final long HOUR = 60 * 60 * 1000l; // in ms
 
     private static final String CONFIG_FILE = "config.properties";
     private static final String PROPERTY_PORT = "port";
@@ -145,9 +147,12 @@ public class JabitServerApplication {
                 .networkHandler(new DefaultNetworkHandler())
                 .security(new BouncySecurity())
                 .port(port)
+                .listener(plaintext -> {
+                })
                 .build();
-        ctx.startup(plaintext -> {
-        });
+        ctx.startup();
+
+        new Timer().scheduleAtFixedRate(new CleanupJob(ctx), 1 * HOUR, 24 * HOUR);
     }
 
     public static void main(String[] args) {
