@@ -27,7 +27,6 @@ import ch.dissem.bitmessage.repository.JdbcInventory;
 import ch.dissem.bitmessage.repository.JdbcMessageRepository;
 import ch.dissem.bitmessage.security.bc.BouncySecurity;
 import ch.dissem.bitmessage.server.entities.Broadcasts;
-import ch.dissem.bitmessage.server.entities.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -45,6 +44,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
+
+import static ch.dissem.bitmessage.server.Converter.broadcasts;
+import static ch.dissem.bitmessage.server.Converter.message;
 
 @CrossOrigin
 @RestController
@@ -77,11 +79,11 @@ public class JabitServerApplication {
         }
 
         if (!whitelist.isEmpty() && !whitelist.contains(broadcaster.getAddress())) {
-            return new Broadcasts(broadcaster, new Message("Not Whitelisted", "Messages for " + broadcaster +
+            return broadcasts(broadcaster, message("Not Whitelisted", "Messages for " + broadcaster +
                     " can't be shown, as the sender isn't on the whitelist."));
         }
         if (blacklist.contains(broadcaster.getAddress())) {
-            return new Broadcasts(broadcaster, new Message("Blacklisted", "Unfortunately, " + broadcaster +
+            return broadcasts(broadcaster, message("Blacklisted", "Unfortunately, " + broadcaster +
                     " is on the blacklist, so it's messages can't be shown."));
         }
 
@@ -95,7 +97,7 @@ public class JabitServerApplication {
                 messages.remove(messages.size() - 1);
             }
         }
-        return new Broadcasts(broadcaster, messages);
+        return broadcasts(broadcaster, messages);
     }
 
     public JabitServerApplication() {
@@ -138,7 +140,7 @@ public class JabitServerApplication {
             LOG.error("Couldn't read port property - is it a number?", e);
         }
 
-        JdbcConfig config = new JdbcConfig();
+        JdbcConfig config = new JdbcConfig("jdbc:h2:file:jabit;AUTO_SERVER=TRUE", "sa", null);
         ctx = new BitmessageContext.Builder()
                 .addressRepo(new JdbcAddressRepository(config))
                 .inventory(new JdbcInventory(config))

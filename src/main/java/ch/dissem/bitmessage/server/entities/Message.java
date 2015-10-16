@@ -23,44 +23,11 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 
 /**
- * Created by chrigu on 30.09.15.
+ * JSON representation for plaintext messages
  */
 public class Message {
-    private Object id;
-    private Long received;
-    private String subject;
-    private String body;
-
-    public Message() {
-    }
-
-    public Message(String subject, String body) {
-        this.id = 0;
-        this.received = UnixTime.now();
-        this.subject = subject;
-        this.body = body;
-    }
-
-    public Message(Plaintext plaintext) {
-        this.id = plaintext.getId();
-        this.received = plaintext.getReceived();
-        this.subject = plaintext.getSubject();
-        this.body = plaintext.getText();
-    }
-
-    public Object getId() {
-        return id;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public Long getReceived() {
-        return received;
-    }
+    public Object id;
+    public Long received;
+    public String subject;
+    public String body;
 }

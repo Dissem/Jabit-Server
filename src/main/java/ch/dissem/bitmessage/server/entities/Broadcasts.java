@@ -22,32 +22,9 @@ import ch.dissem.bitmessage.entity.Plaintext;
 import java.util.Collection;
 
 /**
- * Created by chrigu on 30.09.15.
+ * JSON representation for the broadcasts of a specific sender
  */
 public class Broadcasts {
-    private final Sender sender;
-    private final Message[] messages;
-
-    public Broadcasts(BitmessageAddress sender, Collection<Plaintext> messages) {
-        this.sender = new Sender(sender);
-        this.messages = new Message[messages.size()];
-        int i = 0;
-        for (Plaintext msg : messages) {
-            this.messages[i] = new Message(msg);
-            i++;
-        }
-    }
-
-    public Broadcasts(BitmessageAddress sender, Message... messages) {
-        this.sender = new Sender(sender);
-        this.messages = messages;
-    }
-
-    public Sender getSender() {
-        return sender;
-    }
-
-    public Message[] getMessages() {
-        return messages;
-    }
+    public Sender sender;
+    public Message[] messages;
 }
