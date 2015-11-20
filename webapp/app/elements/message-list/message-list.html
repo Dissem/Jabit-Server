@@ -20,6 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         float: right;
         font-size: 60%;
       }
+
       .paper-font-body2 {
         white-space: pre-wrap;
       }
@@ -41,7 +42,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </template>
 
   <script>
-    (function() {
+    (function () {
       'use strict';
 
       Polymer({
@@ -59,16 +60,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           server: {
             type: String,
-            value: 'http://localhost:8080',
+            value: location.port === 5000 ? 'http://localhost:8080/' : '',
             notify: true
           }
         },
 
-        toDate: function(timestamp) {
+        toDate: function (timestamp) {
           return new Date(timestamp * 1000).toLocaleString();
         },
-        getUrl: function(server, address) {
-          return server + '/read/' + address;
+        getUrl: function (server, address) {
+          console.log(server + 'read/' + address);
+          return server + 'read/' + address;
         }
       });
     })();

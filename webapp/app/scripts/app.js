@@ -16,9 +16,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   var app = document.querySelector('#app');
 
   app.join = function() {
-    var index = 0;
     var result = '';
-    for (index = 0; index < arguments.length; index++) {
+    for (var index = 0; index < arguments.length; index++) {
       result += arguments[index];
     }
     return result;

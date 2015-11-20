@@ -1,6 +1,8 @@
 # Project specific files
 *list.conf
 config.properties
+/*.db
+/application.properties
 
 # Created by https://www.gitignore.io
 

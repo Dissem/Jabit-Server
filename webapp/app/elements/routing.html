@@ -34,6 +34,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     page('/read/:address', scrollToTop, function(data) {
       app.route = 'message-list';
       app.params = data.params;
+      console.log(data);
     });
 
     // add #! before urls
