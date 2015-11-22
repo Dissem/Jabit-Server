@@ -1,0 +1,160 @@
+package ch.dissem.bitmessage.server;
+
+import ch.dissem.bitmessage.DefaultObjectListener;
+import ch.dissem.bitmessage.entity.BitmessageAddress;
+import ch.dissem.bitmessage.entity.ObjectMessage;
+import ch.dissem.bitmessage.entity.Plaintext;
+import ch.dissem.bitmessage.entity.payload.Broadcast;
+import ch.dissem.bitmessage.exception.DecryptionFailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Scanner;
+
+import static ch.dissem.bitmessage.factory.Factory.getObjectMessage;
+import static ch.dissem.bitmessage.server.Constants.*;
+import static ch.dissem.bitmessage.server.Utils.zero;
+import static ch.dissem.bitmessage.utils.Singleton.security;
+
+/**
+ * @author Christian Basler
+ */
+public class ServerObjectListener extends DefaultObjectListener {
+    private final static Logger LOG = LoggerFactory.getLogger(ServerObjectListener.class);
+
+    private final Collection<BitmessageAddress> admins;
+    private final Collection<BitmessageAddress> clients;
+
+    private final Collection<String> whitelist;
+    private final Collection<String> shortlist;
+    private final Collection<String> blacklist;
+
+    public ServerObjectListener(Collection<BitmessageAddress> admins, Collection<BitmessageAddress> clients, Collection<String> whitelist, Collection<String> shortlist, Collection<String> blacklist) {
+        super(p -> {
+        });
+        this.admins = admins;
+        this.clients = clients;
+        this.whitelist = whitelist;
+        this.shortlist = shortlist;
+        this.blacklist = blacklist;
+    }
+
+    @Override
+    protected void receive(ObjectMessage object, Broadcast broadcast) throws IOException {
+        processCommands(broadcast);
+        if (zero(object.getNonce())) {
+            calculateNonceForClient(object, broadcast);
+        } else {
+            super.receive(object, broadcast);
+        }
+    }
+
+    private void processCommands(Broadcast broadcast) throws IOException {
+        for (BitmessageAddress admin : admins) {
+            try {
+                broadcast.decrypt(admin);
+                Plaintext message = broadcast.getPlaintext();
+                String[] command = message.getSubject().trim().toLowerCase().split("\\s+");
+                String data = message.getText();
+                if (command.length == 2) {
+                    switch (command[1]) {
+                        case "client":
+                        case "clients":
+                            updateUserList(CLIENT_LIST, clients, command[0], data);
+                            break;
+                        case "admin":
+                        case "admins":
+                        case "administrator":
+                        case "administrators":
+                            updateUserList(ADMIN_LIST, admins, command[0], data);
+                            break;
+                        case "whitelist":
+                            updateList(WHITELIST, whitelist, command[0], data);
+                            break;
+                        case "shortlist":
+                            updateList(WHITELIST, shortlist, command[0], data);
+                            break;
+                        case "blacklist":
+                            updateList(WHITELIST, blacklist, command[0], data);
+                            break;
+                        default:
+                            LOG.trace("ignoring  unknown command " + message.getSubject());
+                    }
+                }
+            } catch (DecryptionFailedException ignore) {
+            }
+        }
+    }
+
+    private void calculateNonceForClient(ObjectMessage object, Broadcast broadcast) throws IOException {
+        for (BitmessageAddress client : clients) {
+            try {
+                broadcast.decrypt(client);
+                byte[] message = broadcast.getPlaintext().getMessage();
+                final ObjectMessage toRelay = getObjectMessage(3, new ByteArrayInputStream(message), message.length);
+                security().doProofOfWork(toRelay,
+                        ctx.getNetworkNonceTrialsPerByte(), ctx.getNetworkExtraBytes(),
+                        (nonce) -> {
+                            toRelay.setNonce(nonce);
+                            ctx.getInventory().storeObject(object);
+                            ctx.getNetworkHandler().offer(object.getInventoryVector());
+                        }
+                );
+            } catch (DecryptionFailedException ignore) {
+            }
+        }
+    }
+
+    private void updateUserList(String file, Collection<BitmessageAddress> list, String command, String data) {
+        switch (command) {
+            case "set":
+                list.clear();
+            case "add":
+                Scanner scanner = new Scanner(data);
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    try {
+                        list.add(new BitmessageAddress(line));
+                    } catch (Exception e) {
+                        LOG.info(command + " " + file + ": ignoring line: " + line);
+                    }
+                }
+                Utils.saveList(file, list.stream().map(BitmessageAddress::getAddress));
+                break;
+            case "remove":
+                list.removeIf(address -> data.contains(address.getAddress()));
+                Utils.saveList(file, list.stream().map(BitmessageAddress::getAddress));
+                break;
+            default:
+                LOG.info("unknown command " + command + " on list " + file);
+        }
+    }
+
+    private void updateList(String file, Collection<String> list, String command, String data) {
+        switch (command) {
+            case "set":
+                list.clear();
+            case "add":
+                Scanner scanner = new Scanner(data);
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    try {
+                        list.add(new BitmessageAddress(line).getAddress());
+                    } catch (Exception e) {
+                        LOG.info(command + " " + file + ": ignoring line: " + line);
+                    }
+                }
+                Utils.saveList(file, list.stream());
+                break;
+            case "remove":
+                list.removeIf(data::contains);
+                Utils.saveList(file, list.stream());
+                break;
+            default:
+                LOG.info("unknown command " + command + " on list " + file);
+        }
+    }
+}
