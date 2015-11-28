@@ -1,4 +1,6 @@
 # Project specific files
+admins.conf
+clients.conf
 *list.conf
 config.properties
 /*.db

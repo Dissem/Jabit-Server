@@ -56,7 +56,7 @@ public class JabitServerConfig {
                 .messageRepo(new JdbcMessageRepository(config))
                 .nodeRegistry(new MemoryNodeRegistry())
                 .networkHandler(new DefaultNetworkHandler())
-                .objectListener(new ServerObjectListener(admins(), clients(), whitelist(), shortlist(), blacklist()))
+                .listener(new ServerListener(admins(), clients(), whitelist(), shortlist(), blacklist()))
                 .security(new BouncySecurity())
                 .port(port)
                 .connectionLimit(connectionLimit)
