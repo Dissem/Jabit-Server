@@ -19,12 +19,11 @@ package ch.dissem.bitmessage.server;
 import ch.dissem.bitmessage.BitmessageContext;
 import ch.dissem.bitmessage.entity.BitmessageAddress;
 import ch.dissem.bitmessage.networking.DefaultNetworkHandler;
-import ch.dissem.bitmessage.ports.MemoryNodeRegistry;
-import ch.dissem.bitmessage.repository.JdbcAddressRepository;
-import ch.dissem.bitmessage.repository.JdbcConfig;
-import ch.dissem.bitmessage.repository.JdbcInventory;
-import ch.dissem.bitmessage.repository.JdbcMessageRepository;
+import ch.dissem.bitmessage.ports.*;
+import ch.dissem.bitmessage.repository.*;
 import ch.dissem.bitmessage.security.bc.BouncySecurity;
+import ch.dissem.bitmessage.server.repository.ServerProofOfWorkRepository;
+import ch.dissem.bitmessage.utils.Singleton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,16 +47,73 @@ public class JabitServerConfig {
     private int connectionLimit;
 
     @Bean
+    public JdbcConfig jdbcConfig() {
+        return new JdbcConfig("jdbc:h2:file:./jabit;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=10", "sa", null);
+    }
+
+    @Bean
+    public AddressRepository addressRepo() {
+        return new JdbcAddressRepository(jdbcConfig());
+    }
+
+    @Bean
+    public Inventory inventory() {
+        return new JdbcInventory(jdbcConfig());
+    }
+
+    @Bean
+    public MessageRepository messageRepo() {
+        return new JdbcMessageRepository(jdbcConfig());
+    }
+
+    @Bean
+    public ProofOfWorkRepository proofOfWorkRepo() {
+        return new JdbcProofOfWorkRepository(jdbcConfig());
+    }
+
+    @Bean
+    public NodeRegistry nodeRegistry() {
+        return new MemoryNodeRegistry();
+    }
+
+    @Bean
+    public NetworkHandler networkHandler() {
+        return new DefaultNetworkHandler();
+    }
+
+    @Bean
+    public Security security() {
+        BouncySecurity security = new BouncySecurity();
+        Singleton.initialize(security); // needed for admins and clients
+        return security;
+    }
+
+    @Bean
+    public BitmessageContext.Listener serverListener() {
+        return new ServerListener(admins(), clients(), whitelist(), shortlist(), blacklist());
+    }
+
+    @Bean
+    public ServerProofOfWorkRepository serverProofOfWorkRepository() {
+        return new ServerProofOfWorkRepository(jdbcConfig());
+    }
+    @Bean
+    public CustomCommandHandler commandHandler() {
+        return new ProofOfWorkRequestHandler(serverProofOfWorkRepository(), clients());
+    }
+
+    @Bean
     public BitmessageContext bitmessageContext() {
-        JdbcConfig config = new JdbcConfig("jdbc:h2:file:./jabit;AUTO_SERVER=TRUE", "sa", null);
         return new BitmessageContext.Builder()
-                .addressRepo(new JdbcAddressRepository(config))
-                .inventory(new JdbcInventory(config))
-                .messageRepo(new JdbcMessageRepository(config))
-                .nodeRegistry(new MemoryNodeRegistry())
-                .networkHandler(new DefaultNetworkHandler())
-                .listener(new ServerListener(admins(), clients(), whitelist(), shortlist(), blacklist()))
-                .security(new BouncySecurity())
+                .addressRepo(addressRepo())
+                .inventory(inventory())
+                .messageRepo(messageRepo())
+                .nodeRegistry(nodeRegistry())
+                .powRepo(proofOfWorkRepo())
+                .networkHandler(networkHandler())
+                .listener(serverListener())
+                .customCommandHandler(commandHandler())
+                .security(security())
                 .port(port)
                 .connectionLimit(connectionLimit)
                 .connectionTTL(connectionTTL)
@@ -74,6 +130,7 @@ public class JabitServerConfig {
 
     @Bean
     public Set<BitmessageAddress> clients() {
+        security();
         return Utils.readOrCreateList(
                 CLIENT_LIST,
                 "# Clients may send incomplete objects for proof of work.\n"
