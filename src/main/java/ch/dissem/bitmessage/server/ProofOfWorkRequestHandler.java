@@ -27,6 +27,7 @@ import ch.dissem.bitmessage.extensions.pow.ProofOfWorkRequest;
 import ch.dissem.bitmessage.ports.CustomCommandHandler;
 import ch.dissem.bitmessage.ports.ProofOfWorkEngine;
 import ch.dissem.bitmessage.server.repository.ServerProofOfWorkRepository;
+import ch.dissem.bitmessage.utils.UnixTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static ch.dissem.bitmessage.extensions.pow.ProofOfWorkRequest.Request.CALCULATING;
 import static ch.dissem.bitmessage.extensions.pow.ProofOfWorkRequest.Request.COMPLETE;
+import static ch.dissem.bitmessage.utils.UnixTime.DAY;
 
 /**
  * @author Christian Basler
@@ -61,6 +63,12 @@ public class ProofOfWorkRequestHandler implements CustomCommandHandler, Internal
                 doMissingProofOfWork();
             }
         }, 15_000); // After 15 seconds
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                repo.cleanupTasks(7 * DAY);
+            }
+        }, 60_000, DAY * 1000); // First time after 1 minute, then daily
     }
 
     public void doMissingProofOfWork() {
@@ -77,11 +85,12 @@ public class ProofOfWorkRequestHandler implements CustomCommandHandler, Internal
             CryptoCustomMessage<ProofOfWorkRequest> cryptoMessage = CryptoCustomMessage.read(message,
                     ProofOfWorkRequest::read);
             ProofOfWorkRequest request = decrypt(cryptoMessage);
-            if (request == null)
+            if (request == null) {
                 return CustomMessage.error(
                         "Unknown sender. Please ask the server's administrator to add you as a client. " +
                                 "For this he'll need your identity."
                 );
+            }
             switch (request.getRequest()) {
                 case CALCULATE:
                     if (!repo.hasTask(request.getInitialHash())) {

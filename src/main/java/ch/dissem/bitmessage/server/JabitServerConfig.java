@@ -122,6 +122,7 @@ public class JabitServerConfig {
 
     @Bean
     public Set<BitmessageAddress> admins() {
+        security();
         return Utils.readOrCreateList(
                 ADMIN_LIST,
                 "# Admins can send commands to the server.\n"

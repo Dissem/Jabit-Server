@@ -19,6 +19,7 @@ package ch.dissem.bitmessage.server.repository;
 import ch.dissem.bitmessage.extensions.pow.ProofOfWorkRequest;
 import ch.dissem.bitmessage.repository.JdbcConfig;
 import ch.dissem.bitmessage.repository.JdbcHelper;
+import ch.dissem.bitmessage.utils.UnixTime;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,10 +47,11 @@ public class ServerProofOfWorkRepository extends JdbcHelper {
     public void storeTask(ProofOfWorkRequest request) {
         try (Connection connection = config.getConnection()) {
             PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO ProofOfWorkTask (initial_hash, client, target) VALUES (?, ?, ?)");
+                    "INSERT INTO ProofOfWorkTask (initial_hash, client, target, timestamp) VALUES (?, ?, ?, ?)");
             ps.setBytes(1, request.getInitialHash());
             ps.setString(2, request.getSender().getAddress());
             ps.setBytes(3, request.getData());
+            ps.setLong(4, UnixTime.now());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -107,6 +109,17 @@ public class ServerProofOfWorkRepository extends JdbcHelper {
                 ));
             }
             return result;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void cleanupTasks(long ageInSeconds) {
+        try (Connection connection = config.getConnection()) {
+            PreparedStatement ps = connection.prepareStatement(
+                    "DELETE FROM ProofOfWorkTask WHERE timestamp < ?");
+            ps.setLong(1, UnixTime.now(-ageInSeconds));
+            ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
