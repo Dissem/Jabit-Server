@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-package ch.dissem.bitmessage.server;
-
-import ch.dissem.bitmessage.BitmessageContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.TimerTask;
+package ch.dissem.bitmessage.server.entities;
 
 /**
  * @author Christian Basler
  */
-public class CleanupJob extends TimerTask {
-    private static final Logger LOG = LoggerFactory.getLogger(CleanupJob.class);
-    private final BitmessageContext ctx;
+public class Update<T> {
+    public final T oldValue;
+    public final T newValue;
 
-    public CleanupJob(BitmessageContext ctx) {
-        this.ctx = ctx;
-    }
-
-    @Override
-    public void run() {
-        try {
-            ctx.cleanup();
-        } catch (Throwable t) {
-            LOG.error("Problem while cleaning inventory", t);
-        }
+    public Update(T oldValue, T newValue) {
+        this.oldValue = oldValue;
+        this.newValue = newValue;
     }
 }
