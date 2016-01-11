@@ -17,11 +17,11 @@
 package ch.dissem.bitmessage.server;
 
 import ch.dissem.bitmessage.BitmessageContext;
+import ch.dissem.bitmessage.cryptography.bc.BouncyCryptography;
 import ch.dissem.bitmessage.entity.BitmessageAddress;
 import ch.dissem.bitmessage.networking.DefaultNetworkHandler;
 import ch.dissem.bitmessage.ports.*;
 import ch.dissem.bitmessage.repository.*;
-import ch.dissem.bitmessage.security.bc.BouncySecurity;
 import ch.dissem.bitmessage.server.repository.ServerProofOfWorkRepository;
 import ch.dissem.bitmessage.utils.Singleton;
 import org.springframework.beans.factory.annotation.Value;
@@ -82,10 +82,10 @@ public class JabitServerConfig {
     }
 
     @Bean
-    public Security security() {
-        BouncySecurity security = new BouncySecurity();
-        Singleton.initialize(security); // needed for admins and clients
-        return security;
+    public Cryptography cryptography() {
+        BouncyCryptography cryptography = new BouncyCryptography();
+        Singleton.initialize(cryptography); // needed for admins and clients
+        return cryptography;
     }
 
     @Bean
@@ -113,7 +113,7 @@ public class JabitServerConfig {
                 .networkHandler(networkHandler())
                 .listener(serverListener())
                 .customCommandHandler(commandHandler())
-                .security(security())
+                .cryptography(cryptography())
                 .port(port)
                 .connectionLimit(connectionLimit)
                 .connectionTTL(connectionTTL)
@@ -122,7 +122,7 @@ public class JabitServerConfig {
 
     @Bean
     public Set<BitmessageAddress> admins() {
-        security();
+        cryptography();
         return Utils.readOrCreateList(
                 ADMIN_LIST,
                 "# Admins can send commands to the server.\n"
@@ -131,7 +131,7 @@ public class JabitServerConfig {
 
     @Bean
     public Set<BitmessageAddress> clients() {
-        security();
+        cryptography();
         return Utils.readOrCreateList(
                 CLIENT_LIST,
                 "# Clients may send incomplete objects for proof of work.\n"
