@@ -40,7 +40,7 @@ dependencies {
     compile("io.springfox:springfox-swagger2:2.0.2")
     compile("io.springfox:springfox-swagger-ui:2.0.2")
 
-    compile 'ch.dissem.jabit:jabit-domain:0.2.1-SNAPSHOT'
+    compile 'ch.dissem.jabit:jabit-core:0.2.1-SNAPSHOT'
     compile 'ch.dissem.jabit:jabit-networking:0.2.1-SNAPSHOT'
     compile 'ch.dissem.jabit:jabit-repositories:0.2.1-SNAPSHOT'
     compile 'ch.dissem.jabit:jabit-cryptography-bouncy:0.2.1-SNAPSHOT'
