@@ -17,19 +17,23 @@
 package ch.dissem.bitmessage.server;
 
 import ch.dissem.bitmessage.BitmessageContext;
-import ch.dissem.bitmessage.cryptography.bc.BouncyCryptography;
+import ch.dissem.bitmessage.cryptography.sc.SpongyCryptography;
 import ch.dissem.bitmessage.entity.BitmessageAddress;
-import ch.dissem.bitmessage.networking.DefaultNetworkHandler;
+import ch.dissem.bitmessage.entity.payload.Pubkey;
+import ch.dissem.bitmessage.networking.nio.NioNetworkHandler;
 import ch.dissem.bitmessage.ports.*;
 import ch.dissem.bitmessage.repository.*;
 import ch.dissem.bitmessage.server.repository.ServerProofOfWorkRepository;
 import ch.dissem.bitmessage.utils.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
+import java.util.List;
 import java.util.Set;
 
 import static ch.dissem.bitmessage.server.Constants.*;
@@ -37,6 +41,8 @@ import static java.util.stream.Collectors.toSet;
 
 @Configuration
 public class JabitServerConfig {
+    private static final Logger LOG = LoggerFactory.getLogger(JabitServerConfig.class);
+
     public static final int SHORTLIST_SIZE = 5;
 
     @Value("${bitmessage.port}")
@@ -46,9 +52,16 @@ public class JabitServerConfig {
     @Value("${bitmessage.connection.limit}")
     private int connectionLimit;
 
+    @Value("${database.url}")
+    private String dbUrl;
+    @Value("${database.user}")
+    private String dbUser;
+    @Value("${database.password}")
+    private String dbPassword;
+
     @Bean
     public JdbcConfig jdbcConfig() {
-        return new JdbcConfig("jdbc:h2:file:./jabit;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=10", "sa", null);
+        return new JdbcConfig(dbUrl, dbUser, dbPassword);
     }
 
     @Bean
@@ -73,17 +86,17 @@ public class JabitServerConfig {
 
     @Bean
     public NodeRegistry nodeRegistry() {
-        return new MemoryNodeRegistry();
+        return new JdbcNodeRegistry(jdbcConfig());
     }
 
     @Bean
     public NetworkHandler networkHandler() {
-        return new DefaultNetworkHandler();
+        return new NioNetworkHandler();
     }
 
     @Bean
     public Cryptography cryptography() {
-        BouncyCryptography cryptography = new BouncyCryptography();
+        Cryptography cryptography = new SpongyCryptography();
         Singleton.initialize(cryptography); // needed for admins and clients
         return cryptography;
     }
@@ -97,6 +110,7 @@ public class JabitServerConfig {
     public ServerProofOfWorkRepository serverProofOfWorkRepository() {
         return new ServerProofOfWorkRepository(jdbcConfig());
     }
+
     @Bean
     public CustomCommandHandler commandHandler() {
         return new ProofOfWorkRequestHandler(serverProofOfWorkRepository(), clients());
@@ -172,5 +186,24 @@ public class JabitServerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
                 .build();
+    }
+
+    @Bean
+    public BitmessageAddress identity() {
+        List<BitmessageAddress> identities = bitmessageContext().addresses().getIdentities();
+        BitmessageAddress identity;
+        if (identities.isEmpty()) {
+            LOG.info("Creating new identity...");
+            identity = bitmessageContext().createIdentity(false, Pubkey.Feature.DOES_ACK);
+            LOG.info("Identity " + identity.getAddress() + " created.");
+        } else {
+            LOG.info("Identities:");
+            identities.stream().map(BitmessageAddress::getAddress).forEach(LOG::info);
+            identity = identities.get(0);
+            if (identities.size() > 1) {
+                LOG.info("Using " + identity);
+            }
+        }
+        return identity;
     }
 }

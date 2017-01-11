@@ -131,8 +131,8 @@ public class ProofOfWorkRequestHandler implements CustomCommandHandler, Internal
                         final BitmessageAddress identity = new BitmessageAddress(new PrivateKey(
                                 false,
                                 context.getStreams()[0],
-                                context.getNetworkNonceTrialsPerByte(),
-                                context.getNetworkExtraBytes()
+                                InternalContext.NETWORK_NONCE_TRIALS_PER_BYTE,
+                                InternalContext.NETWORK_EXTRA_BYTES
                         ));
                         context.getAddressRepository().save(identity);
                         return identity;

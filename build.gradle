@@ -33,7 +33,7 @@ configurations {
     providedRuntime
 }
 
-ext.jabitVersion = '1.0.0'
+ext.jabitVersion = 'development-SNAPSHOT'
 dependencies {
     compile("org.springframework.boot:spring-boot-starter-hateoas")
     compile("org.springframework.boot:spring-boot-starter-jersey")
@@ -44,7 +44,7 @@ dependencies {
     compile "ch.dissem.jabit:jabit-core:$jabitVersion"
     compile "ch.dissem.jabit:jabit-networking:$jabitVersion"
     compile "ch.dissem.jabit:jabit-repositories:$jabitVersion"
-    compile "ch.dissem.jabit:jabit-cryptography-bouncy:$jabitVersion"
+    compile "ch.dissem.jabit:jabit-cryptography-spongy:$jabitVersion"
     compile "ch.dissem.jabit:jabit-extensions:$jabitVersion"
 
     compile 'com.h2database:h2:1.4.187'
