@@ -16,16 +16,24 @@
 
 package ch.dissem.bitmessage.server;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import ch.dissem.bitmessage.entity.BitmessageAddress;
+import com.google.zxing.WriterException;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.google.zxing.qrcode.encoder.ByteMatrix;
+import com.google.zxing.qrcode.encoder.Encoder;
+import com.google.zxing.qrcode.encoder.QRCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Stream;
 
 public class Utils {
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+
     public static Set<String> readOrCreateList(String filename, String content) {
         try {
             File file = new File(filename);
@@ -74,6 +82,67 @@ public class Utils {
             e.printStackTrace();
         }
         return result;
+    }
+
+    public static String qrCode(BitmessageAddress address) {
+        StringBuilder link = new StringBuilder();
+        link.append("bitmessage:");
+        link.append(address.getAddress());
+        if (address.getAlias() != null) {
+            link.append("?label=").append(address.getAlias());
+        }
+        if (address.getPubkey() != null) {
+            link.append(address.getAlias() == null ? '?' : '&');
+            ByteArrayOutputStream pubkey = new ByteArrayOutputStream();
+            try {
+                address.getPubkey().writeUnencrypted(pubkey);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            // This makes the QR code quite big, so it's not active. But sometimes it might be useful:
+            // link.append("pubkey=").append(Base64.getUrlEncoder().encodeToString(pubkey.toByteArray()));
+        }
+        QRCode code;
+        try {
+            code = Encoder.encode(link.toString(), ErrorCorrectionLevel.L, null);
+        } catch (WriterException e) {
+            LOG.error(e.getMessage(), e);
+            return "";
+        }
+        ByteMatrix matrix = code.getMatrix();
+        StringBuilder result = new StringBuilder();
+        for (int i=0; i<2; i++){
+            for (int j=0;j<matrix.getWidth()+8; j++){
+                result.append('█');
+            }
+            result.append('\n');
+        }
+        for (int i = 0; i < matrix.getHeight(); i += 2) {
+            result.append("████");
+            for (int j = 0; j < matrix.getWidth(); j++) {
+                if (matrix.get(i, j) > 0) {
+                    if (matrix.getHeight() > i + 1 && matrix.get(i + 1, j) > 0) {
+                        result.append(' ');
+                    } else {
+                        result.append('▄');
+                    }
+                } else {
+                    if (matrix.getHeight() > i + 1 && matrix.get(i + 1, j) > 0) {
+                        result.append('▀');
+                    } else {
+                        result.append('█');
+                    }
+                }
+            }
+            result.append("████\n");
+        }
+        for (int i=0; i<2; i++){
+            for (int j=0;j<matrix.getWidth()+8; j++){
+                result.append('█');
+            }
+            result.append('\n');
+        }
+        return result.toString();
     }
 
     public static boolean zero(byte[] nonce) {

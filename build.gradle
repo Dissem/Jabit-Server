@@ -49,6 +49,8 @@ dependencies {
 
     compile 'com.h2database:h2:1.4.194'
 
+    compile 'com.google.zxing:core:3.3.0'
+
     providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testCompile("org.springframework.boot:spring-boot-starter-test")
 }

@@ -204,6 +204,7 @@ public class JabitServerConfig {
                 LOG.info("Using " + identity);
             }
         }
+        LOG.info("QR Code:\n" + Utils.qrCode(identity));
         return identity;
     }
 }
