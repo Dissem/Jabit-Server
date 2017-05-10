@@ -44,10 +44,10 @@ dependencies {
     compile "ch.dissem.jabit:jabit-core:$jabitVersion"
     compile "ch.dissem.jabit:jabit-networking:$jabitVersion"
     compile "ch.dissem.jabit:jabit-repositories:$jabitVersion"
-    compile "ch.dissem.jabit:jabit-cryptography-spongy:$jabitVersion"
+    compile "ch.dissem.jabit:jabit-cryptography-bouncy:$jabitVersion"
     compile "ch.dissem.jabit:jabit-extensions:$jabitVersion"
 
-    compile 'com.h2database:h2:1.4.187'
+    compile 'com.h2database:h2:1.4.194'
 
     providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testCompile("org.springframework.boot:spring-boot-starter-test")

@@ -19,18 +19,22 @@ package ch.dissem.bitmessage.server;
 import ch.dissem.bitmessage.BitmessageContext;
 import ch.dissem.bitmessage.entity.BitmessageAddress;
 import ch.dissem.bitmessage.entity.Plaintext;
+import ch.dissem.bitmessage.entity.valueobject.extended.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Scanner;
 
+import static ch.dissem.bitmessage.entity.Plaintext.Encoding.EXTENDED;
+import static ch.dissem.bitmessage.entity.Plaintext.Type.MSG;
 import static ch.dissem.bitmessage.server.Constants.*;
 
 /**
  * @author Christian Basler
  */
-public class ServerListener implements BitmessageContext.Listener {
+public class ServerListener implements BitmessageContext.Listener.WithContext {
     private final static Logger LOG = LoggerFactory.getLogger(ServerListener.class);
 
     private final Collection<BitmessageAddress> admins;
@@ -39,6 +43,9 @@ public class ServerListener implements BitmessageContext.Listener {
     private final Collection<String> whitelist;
     private final Collection<String> shortlist;
     private final Collection<String> blacklist;
+
+    private BitmessageContext ctx;
+    private BitmessageAddress identity;
 
     public ServerListener(Collection<BitmessageAddress> admins,
                           Collection<BitmessageAddress> clients,
@@ -53,12 +60,49 @@ public class ServerListener implements BitmessageContext.Listener {
     }
 
     @Override
+    public void setContext(BitmessageContext ctx) {
+        this.ctx = ctx;
+    }
+
+    private BitmessageAddress getIdentity() {
+        if (identity == null) {
+            List<BitmessageAddress> identities = ctx.addresses().getIdentities();
+            if (!identities.isEmpty()) {
+                identity = identities.get(0);
+            }
+        }
+        return identity;
+    }
+
+    @Override
     public void receive(Plaintext message) {
         if (admins.contains(message.getFrom())) {
             String[] command = message.getSubject().trim().toLowerCase().split("\\s+");
             String data = message.getText();
-            if (command.length == 2) {
-                switch (command[1]) {
+            if (command.length == 1) {
+                switch (command[0].toLowerCase()) {
+                    case "status":
+                        Plaintext.Builder response = new Plaintext.Builder(MSG);
+                        response.from(getIdentity());
+                        response.to(message.getFrom());
+                        if (message.getEncoding() == EXTENDED) {
+                            response.message(
+                                    new Message.Builder()
+                                            .subject("RE: status")
+                                            .body(ctx.status().toString())
+                                            .addParent(message)
+                                            .build()
+                            );
+                        } else {
+                            response.message("RE: status", ctx.status().toString());
+                        }
+                        ctx.send(response.build());
+                        break;
+                    default:
+                        LOG.info("ignoring  unknown command " + message.getSubject());
+                }
+            } else if (command.length == 2) {
+                switch (command[1].toLowerCase()) {
                     case "client":
                     case "clients":
                         updateUserList(CLIENT_LIST, clients, command[0], data);
@@ -79,14 +123,14 @@ public class ServerListener implements BitmessageContext.Listener {
                         updateList(BLACKLIST, blacklist, command[0], data);
                         break;
                     default:
-                        LOG.trace("ignoring  unknown command " + message.getSubject());
+                        LOG.info("ignoring  unknown command " + message.getSubject());
                 }
             }
         }
     }
 
     private void updateUserList(String file, Collection<BitmessageAddress> list, String command, String data) {
-        switch (command) {
+        switch (command.toLowerCase()) {
             case "set":
                 list.clear();
             case "add":
@@ -111,7 +155,7 @@ public class ServerListener implements BitmessageContext.Listener {
     }
 
     private void updateList(String file, Collection<String> list, String command, String data) {
-        switch (command) {
+        switch (command.toLowerCase()) {
             case "set":
                 list.clear();
             case "add":

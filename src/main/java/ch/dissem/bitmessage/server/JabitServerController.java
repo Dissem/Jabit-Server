@@ -22,6 +22,7 @@ import ch.dissem.bitmessage.entity.Plaintext;
 import ch.dissem.bitmessage.server.entities.Broadcasts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +33,6 @@ import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
 
 import static ch.dissem.bitmessage.server.Converter.broadcasts;
 import static ch.dissem.bitmessage.server.Converter.message;
@@ -59,6 +59,8 @@ public class JabitServerController {
     private Set<String> shortlist;
     @Resource
     private Set<String> blacklist;
+    @Inject
+    private BitmessageAddress identity;
     @Inject
     private BitmessageContext ctx;
 
@@ -104,9 +106,18 @@ public class JabitServerController {
         return broadcasts(broadcaster, messages);
     }
 
+    @Scheduled(cron = "0 0 0 * * *")
+    public void broadcastStatus() {
+        ctx.broadcast(identity, "Status", ctx.status().toString());
+    }
+
+    @Scheduled(cron = "0 0 2 * * *")
+    public void cleanup() {
+        ctx.cleanup();
+    }
+
     @PostConstruct
     public void setUp() {
         ctx.startup();
-        new Timer().scheduleAtFixedRate(new CleanupJob(ctx), 1 * HOUR, 24 * HOUR);
     }
 }

@@ -17,7 +17,7 @@
 package ch.dissem.bitmessage.server;
 
 import ch.dissem.bitmessage.BitmessageContext;
-import ch.dissem.bitmessage.cryptography.sc.SpongyCryptography;
+import ch.dissem.bitmessage.cryptography.bc.BouncyCryptography;
 import ch.dissem.bitmessage.entity.BitmessageAddress;
 import ch.dissem.bitmessage.entity.payload.Pubkey;
 import ch.dissem.bitmessage.networking.nio.NioNetworkHandler;
@@ -96,7 +96,7 @@ public class JabitServerConfig {
 
     @Bean
     public Cryptography cryptography() {
-        Cryptography cryptography = new SpongyCryptography();
+        Cryptography cryptography = new BouncyCryptography();
         Singleton.initialize(cryptography); // needed for admins and clients
         return cryptography;
     }

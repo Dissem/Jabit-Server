@@ -23,7 +23,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @SpringBootApplication
 @EnableSwagger2
-@ComponentScan(basePackageClasses = JabitServerController.class)
+@ComponentScan(basePackageClasses = JabitServerApplication.class)
 public class JabitServerApplication {
 
     public static void main(String[] args) {
