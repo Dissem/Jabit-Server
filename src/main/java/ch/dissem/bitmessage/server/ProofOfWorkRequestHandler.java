@@ -27,11 +27,9 @@ import ch.dissem.bitmessage.extensions.pow.ProofOfWorkRequest;
 import ch.dissem.bitmessage.ports.CustomCommandHandler;
 import ch.dissem.bitmessage.ports.ProofOfWorkEngine;
 import ch.dissem.bitmessage.server.repository.ServerProofOfWorkRepository;
-import ch.dissem.bitmessage.utils.UnixTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Timer;
@@ -81,46 +79,42 @@ public class ProofOfWorkRequestHandler implements CustomCommandHandler, Internal
 
     @Override
     public MessagePayload handle(CustomMessage message) {
-        try {
-            CryptoCustomMessage<ProofOfWorkRequest> cryptoMessage = CryptoCustomMessage.read(message,
-                    ProofOfWorkRequest::read);
-            ProofOfWorkRequest request = decrypt(cryptoMessage);
-            if (request == null) {
-                return CustomMessage.error(
-                        "Unknown sender. Please ask the server's administrator to add you as a client. " +
-                                "For this he'll need your identity."
-                );
-            }
-            switch (request.getRequest()) {
-                case CALCULATE:
-                    if (!repo.hasTask(request.getInitialHash())) {
-                        repo.storeTask(request);
-                        // TODO: This is probably the place to do some book-keeping
-                        // if we want to bill our customers.
-                        engine.calculateNonce(request.getInitialHash(), request.getData(), repo::updateTask);
-                        return new CryptoCustomMessage<>(
-                                new ProofOfWorkRequest(getIdentity(), request.getInitialHash(), CALCULATING, new byte[0])
+        CryptoCustomMessage<ProofOfWorkRequest> cryptoMessage = CryptoCustomMessage.read(message,
+                ProofOfWorkRequest::read);
+        ProofOfWorkRequest request = decrypt(cryptoMessage);
+        if (request == null) {
+            return CustomMessage.error(
+                    "Unknown sender. Please ask the server's administrator to add you as a client. " +
+                            "For this he'll need your identity."
+            );
+        }
+        switch (request.getRequest()) {
+            case CALCULATE:
+                if (!repo.hasTask(request.getInitialHash())) {
+                    repo.storeTask(request);
+                    // TODO: This is probably the place to do some book-keeping
+                    // if we want to bill our customers.
+                    engine.calculateNonce(request.getInitialHash(), request.getData(), repo::updateTask);
+                    return new CryptoCustomMessage<>(
+                            new ProofOfWorkRequest(getIdentity(), request.getInitialHash(), CALCULATING, new byte[0])
+                    );
+                } else {
+                    byte[] nonce = repo.getNonce(request);
+                    CryptoCustomMessage<ProofOfWorkRequest> response;
+                    if (nonce != null) {
+                        response = new CryptoCustomMessage<>(
+                                new ProofOfWorkRequest(getIdentity(), request.getInitialHash(), COMPLETE, nonce)
                         );
                     } else {
-                        byte[] nonce = repo.getNonce(request);
-                        CryptoCustomMessage<ProofOfWorkRequest> response;
-                        if (nonce != null) {
-                            response = new CryptoCustomMessage<>(
-                                    new ProofOfWorkRequest(getIdentity(), request.getInitialHash(), COMPLETE, nonce)
-                            );
-                        } else {
-                            response = new CryptoCustomMessage<>(
-                                    new ProofOfWorkRequest(getIdentity(), request.getInitialHash(), CALCULATING, new byte[0])
-                            );
-                        }
-                        response.signAndEncrypt(serverIdentity, request.getSender().getPubkey().getEncryptionKey());
-                        return response;
+                        response = new CryptoCustomMessage<>(
+                                new ProofOfWorkRequest(getIdentity(), request.getInitialHash(), CALCULATING, new byte[0])
+                        );
                     }
-            }
-            return null;
-        } catch (IOException e) {
-            return CustomMessage.error(e.getMessage());
+                    response.signAndEncrypt(serverIdentity, request.getSender().getPubkey().getEncryptionKey());
+                    return response;
+                }
         }
+        return null;
     }
 
     private BitmessageAddress getIdentity() {
@@ -148,8 +142,6 @@ public class ProofOfWorkRequestHandler implements CustomCommandHandler, Internal
             try {
                 return cryptoMessage.decrypt(key);
             } catch (DecryptionFailedException ignore) {
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         }
         return null;

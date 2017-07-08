@@ -118,7 +118,7 @@ public class ServerProofOfWorkRepository extends JdbcHelper {
         try (Connection connection = config.getConnection()) {
             PreparedStatement ps = connection.prepareStatement(
                     "DELETE FROM ProofOfWorkTask WHERE timestamp < ?");
-            ps.setLong(1, UnixTime.now(-ageInSeconds));
+            ps.setLong(1, UnixTime.now() - ageInSeconds);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);

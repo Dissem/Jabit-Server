@@ -25,7 +25,10 @@ import com.google.zxing.qrcode.encoder.QRCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -91,17 +94,13 @@ public class Utils {
         if (address.getAlias() != null) {
             link.append("?label=").append(address.getAlias());
         }
-        if (address.getPubkey() != null) {
-            link.append(address.getAlias() == null ? '?' : '&');
-            ByteArrayOutputStream pubkey = new ByteArrayOutputStream();
-            try {
-                address.getPubkey().writeUnencrypted(pubkey);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            // This makes the QR code quite big, so it's not active. But sometimes it might be useful:
-            // link.append("pubkey=").append(Base64.getUrlEncoder().encodeToString(pubkey.toByteArray()));
-        }
+        // This makes the QR code quite big, so it's not active. But sometimes it might be useful:
+//        if (address.getPubkey() != null) {
+//            link.append(address.getAlias() == null ? '?' : '&');
+//            ByteArrayOutputStream pubkey = new ByteArrayOutputStream();
+//            address.getPubkey().writeUnencrypted(pubkey);
+//            link.append("pubkey=").append(Base64.getUrlEncoder().encodeToString(pubkey.toByteArray()));
+//        }
         QRCode code;
         try {
             code = Encoder.encode(link.toString(), ErrorCorrectionLevel.L, null);
@@ -111,8 +110,8 @@ public class Utils {
         }
         ByteMatrix matrix = code.getMatrix();
         StringBuilder result = new StringBuilder();
-        for (int i=0; i<2; i++){
-            for (int j=0;j<matrix.getWidth()+8; j++){
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < matrix.getWidth() + 8; j++) {
                 result.append('█');
             }
             result.append('\n');
@@ -136,8 +135,8 @@ public class Utils {
             }
             result.append("████\n");
         }
-        for (int i=0; i<2; i++){
-            for (int j=0;j<matrix.getWidth()+8; j++){
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < matrix.getWidth() + 8; j++) {
                 result.append('█');
             }
             result.append('\n');
