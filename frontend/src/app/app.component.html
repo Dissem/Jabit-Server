@@ -1,0 +1,10 @@
+<mat-toolbar color="primary" class="mat-elevation-z6">
+  <div fxLayout fxLayoutAlign="space-between center" fxFlex>
+    {{title}}
+    <a mat-button title="Go to server status page" class="right"
+       routerLink="/status">
+      Status
+    </a>
+  </div>
+</mat-toolbar>
+<router-outlet></router-outlet>

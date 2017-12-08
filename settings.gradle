@@ -1,1 +1,3 @@
-include 'webapp'
+include 'frontend'
+
+rootProject.name = 'jabit-server'

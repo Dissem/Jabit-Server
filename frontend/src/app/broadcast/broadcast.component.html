@@ -1,0 +1,16 @@
+<div *ngIf="broadcasts$ | async as broadcasts">
+  <h1>{{broadcasts.sender.alias || broadcasts.sender.address}}</h1>
+  <mat-expansion-panel *ngFor="let message of broadcasts.messages">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        {{message.subject}}
+      </mat-panel-title>
+      <mat-panel-description>
+        {{message.received * 1000 | date:'medium'}}
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
+    <pre><code>{{message.body}}</code></pre>
+
+  </mat-expansion-panel>
+</div>

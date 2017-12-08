@@ -1,22 +1,33 @@
 buildscript {
+    ext.kotlin_version = '1.2.0'
     ext {
-        springBootVersion = '1.3.0.M5'
+        springBootVersion = '2.0.0.M7'
     }
     repositories {
         mavenCentral()
-        maven { url "https://repo.spring.io/snapshot" }
         maven { url "https://repo.spring.io/milestone" }
+        jcenter()
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath('se.transmode.gradle:gradle-docker:1.2')
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
+        classpath 'com.github.ben-manes:gradle-versions-plugin:0.17.0'
     }
 }
 
+group = 'dissem'
+
 apply plugin: 'java'
-apply plugin: 'eclipse-wtp'
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-spring'
+apply plugin: 'eclipse'
 apply plugin: 'idea'
-apply plugin: 'spring-boot'
+apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
+apply plugin: 'docker'
+apply plugin: 'com.github.ben-manes.versions'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -33,13 +44,13 @@ configurations {
     providedRuntime
 }
 
-ext.jabitVersion = 'development-SNAPSHOT'
+ext.jabitVersion = 'feature-refactoring-SNAPSHOT'
 dependencies {
     compile("org.springframework.boot:spring-boot-starter-hateoas")
     compile("org.springframework.boot:spring-boot-starter-jersey")
     compile("org.springframework.boot:spring-boot-starter-web")
-    compile("io.springfox:springfox-swagger2:2.0.2")
-    compile("io.springfox:springfox-swagger-ui:2.0.2")
+    compile("io.springfox:springfox-swagger2:2.7.0")
+    compile("io.springfox:springfox-swagger-ui:2.7.0")
 
     compile "ch.dissem.jabit:jabit-core:$jabitVersion"
     compile "ch.dissem.jabit:jabit-networking:$jabitVersion"
@@ -49,10 +60,14 @@ dependencies {
 
     compile 'com.h2database:h2:1.4.194'
 
-    compile 'com.google.zxing:core:3.3.0'
+    compile 'com.google.zxing:core:3.3.1'
 
     providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testCompile("org.springframework.boot:spring-boot-starter-test")
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 }
 
 
@@ -63,13 +78,39 @@ eclipse {
     }
 }
 
-task(copyWebapp, type: Copy, dependsOn: ":webapp:build") {
-    from(file('webapp/dist'))
-    into(file(buildDir.canonicalPath + '/resources/main/static'))
+task buildDocker(type: Docker, dependsOn: build) {
+    push = true
+    applicationName = 'jabit-server'
+    dockerfile = file('src/main/docker/Dockerfile')
+    doFirst {
+        copy {
+            from jar
+            into stageDir
+        }
+    }
 }
 
-build.dependsOn copyWebapp
+jar {
+    baseName = 'jabit-server'
+    from('frontend/dist') {
+        //Public is a default supported Spring Boot resources directory.
+        into 'public'
+    }
+}
+
+//frontend:build will be run before the processResources
+processResources.dependsOn('frontend:build')
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.3'
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }

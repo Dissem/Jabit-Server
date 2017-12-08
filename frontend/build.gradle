@@ -1,0 +1,16 @@
+plugins {
+  id "com.moowork.node" version "1.1.1"
+}
+
+node {
+  // Version of node to use.
+  version = '7.10.0'
+
+  // Enabled the automatic download.
+  download = true
+}
+
+// runs "gulp build" as part of your gradle build
+task build {
+  dependsOn npm_run_build
+}
