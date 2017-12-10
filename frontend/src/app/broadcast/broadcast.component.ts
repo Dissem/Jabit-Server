@@ -1,7 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
-import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs/Observable";
+import {BackendService, Broadcasts} from "../backend.service";
+import {map, switchMap} from "rxjs/operators";
 
 @Component({
   selector: 'app-broadcast',
@@ -12,29 +13,13 @@ export class BroadcastComponent implements OnInit {
 
   broadcasts$: Observable<Broadcasts>;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient) {
+  constructor(private route: ActivatedRoute, private backend: BackendService) {
   }
 
   ngOnInit() {
-    let address = this.route.snapshot.params['address'];
-    this.broadcasts$ = this.http.get<Broadcasts>('http://localhost:8080/read/' + address)
+    this.broadcasts$ = this.route.params
+      .pipe(map(p => p['address']))
+      .pipe(switchMap(address => this.backend.getBroadcasts(address)));
   }
 
-}
-
-class Sender {
-  address: String;
-  alias: String;
-}
-
-class Message {
-  id: any;
-  received: number;
-  subject: string;
-  body: string;
-}
-
-class Broadcasts {
-  sender: Sender;
-  messages: Message[]
 }

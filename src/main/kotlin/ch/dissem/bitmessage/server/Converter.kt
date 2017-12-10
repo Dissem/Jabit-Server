@@ -48,7 +48,7 @@ object Converter {
 
     fun message(plaintext: Plaintext) = Message().apply {
         id = plaintext.id
-        received = plaintext.sent
+        received = plaintext.received
         subject = plaintext.subject
         body = plaintext.text
     }

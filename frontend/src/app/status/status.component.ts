@@ -1,22 +1,18 @@
-import {Component, OnInit} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {Component} from '@angular/core';
+import {BackendService} from "../backend.service";
+import {Observable} from "rxjs/Observable";
 
 @Component({
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss']
 })
-export class StatusComponent implements OnInit {
+export class StatusComponent {
 
-  status: string;
+  status$: Observable<string>;
 
-  constructor(private http: HttpClient) {
-  }
-
-  ngOnInit() {
-    this.http.get('http://localhost:8080/status').subscribe(data => {
-      this.status = JSON.stringify(data, null, 2);
-    });
+  constructor(backend: BackendService) {
+    this.status$ = backend.getStatus();
   }
 
 }

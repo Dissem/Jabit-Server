@@ -7,9 +7,10 @@ import {RouterModule} from "@angular/router";
 import {StatusComponent} from './status/status.component';
 import {APP_ROUTES} from "./app.routes";
 import {HttpClientModule} from "@angular/common/http";
-import { BroadcastComponent } from './broadcast/broadcast.component';
+import {BroadcastComponent} from './broadcast/broadcast.component';
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {FlexLayoutModule} from "@angular/flex-layout";
+import {BackendService} from "./backend.service";
 
 @NgModule({
   declarations: [
@@ -28,7 +29,9 @@ import {FlexLayoutModule} from "@angular/flex-layout";
     MatExpansionModule,
     MatButtonModule
   ],
-  providers: [],
+  providers: [
+    BackendService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {

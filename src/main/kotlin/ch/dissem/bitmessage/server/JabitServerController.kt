@@ -36,6 +36,7 @@ import javax.inject.Inject
  */
 @CrossOrigin
 @RestController
+@RequestMapping("/api/v1")
 class JabitServerController {
 
     @Resource
@@ -54,7 +55,6 @@ class JabitServerController {
     "address": "${identity.address}",
     "uri":     "${Utils.getURL(identity, true)}"
 }"""
-
 
     @RequestMapping(value = ["status"], method = [GET], produces = ["application/json"])
     fun status() = "{${ctx.status()}}"
